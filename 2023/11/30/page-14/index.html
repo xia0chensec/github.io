@@ -1,0 +1,254 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>初识JWT攻击 | Cobra's blog</title><meta name="author" content="Cobra"><meta name="copyright" content="Cobra"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="什么是JWTJSON Web Token(JWT) 是一种标准化格式，用于在系统之间发送加密签名的 JSON 数据。与经典会话令牌不同，服务器所需的所有数据都存储在 JWT 本身的客户端中。 JWT 格式JWT 由 3 部分组成：头部、有效负载和签名。它们均由点分隔，如以下示例所示： https:&#x2F;&#x2F;jwt.io&#x2F; 1231.头部（Header）包含了关于该 JWT 的元数据，如令牌的类型(&amp;qu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="初识JWT攻击">
+<meta property="og:url" content="http://www.chiza.top/2023/11/30/page-14/index.html">
+<meta property="og:site_name" content="Cobra&#39;s blog">
+<meta property="og:description" content="什么是JWTJSON Web Token(JWT) 是一种标准化格式，用于在系统之间发送加密签名的 JSON 数据。与经典会话令牌不同，服务器所需的所有数据都存储在 JWT 本身的客户端中。 JWT 格式JWT 由 3 部分组成：头部、有效负载和签名。它们均由点分隔，如以下示例所示： https:&#x2F;&#x2F;jwt.io&#x2F; 1231.头部（Header）包含了关于该 JWT 的元数据，如令牌的类型(&amp;qu">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://img.chiza.top/image-20230226152938341.png">
+<meta property="article:published_time" content="2023-11-30T06:15:42.000Z">
+<meta property="article:modified_time" content="2023-11-30T06:17:32.191Z">
+<meta property="article:author" content="Cobra">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://img.chiza.top/image-20230226152938341.png"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://www.chiza.top/2023/11/30/page-14/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '初识JWT攻击',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-11-30 14:17:32'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 6.3.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="http://img.chiza.top/toux.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('http://img.chiza.top/image-20230226152938341.png')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Cobra's blog</a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">初识JWT攻击</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-11-30T06:15:42.000Z" title="发表于 2023-11-30 14:15:42">2023-11-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2023-11-30T06:17:32.191Z" title="更新于 2023-11-30 14:17:32">2023-11-30</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">3.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>10分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="初识JWT攻击"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h3 id="什么是JWT"><a href="#什么是JWT" class="headerlink" title="什么是JWT"></a>什么是JWT</h3><p>JSON Web Token(JWT) 是一种标准化格式，用于在系统之间发送加密签名的 JSON 数据。与经典会话令牌不同，服务器所需的所有数据都存储在 JWT 本身的客户端中。</p>
+<h3 id="JWT-格式"><a href="#JWT-格式" class="headerlink" title="JWT 格式"></a>JWT 格式</h3><p>JWT 由 3 部分组成：头部、有效负载和签名。它们均由点分隔，如以下示例所示：</p>
+<p><a target="_blank" rel="noopener" href="https://jwt.io/">https://jwt.io/</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1.头部（Header）包含了关于该 JWT 的元数据，如令牌的类型(&quot;typ&quot;)和签名算法(&quot;alg&quot;)等。</span><br><span class="line">2.有效负载（Payload）是 JWT 的主要内容，包含了用于验证和识别用户身份的声明信息，如用户ID、过期时间、权限等。</span><br><span class="line">3.签名（Signature）是使用私钥对头部和载荷进行签名，以确保令牌的完整性和真实性。在服务器端验证 JWT 时，使用相应的公钥进行解密和验签，以确保令牌的合法性。</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://img.chiza.top/202311241111515.png" alt="image-20231124111054340"></p>
+<h3 id="JWT攻击"><a href="#JWT攻击" class="headerlink" title="JWT攻击"></a>JWT攻击</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">JWT（JSON Web Token）本身并不越权，但是如果在使用和验证 JWT 的过程中存在安全漏洞或错误的实现，可能导致越权问题。</span><br><span class="line">以下是一些可能导致JWT越权问题的常见情况：</span><br><span class="line"></span><br><span class="line">1、未校验签名算法: JWT未校验签名算法或者攻击者可将签名算法改为none</span><br><span class="line">2、使用了弱密钥: 攻击者可以爆破获得密钥，然后使用密钥通过有效签名对令牌进行重新签名</span><br><span class="line">3、jwk,jku密钥注入</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+
+<h3 id="通过Burp-Suite靶场学习JWT攻击"><a href="#通过Burp-Suite靶场学习JWT攻击" class="headerlink" title="通过Burp Suite靶场学习JWT攻击"></a>通过Burp Suite靶场学习JWT攻击</h3><h4 id="一、通过未经验证的签名绕过-JWT-身份验证-JWT-authentication-bypass-via-unverified-signature"><a href="#一、通过未经验证的签名绕过-JWT-身份验证-JWT-authentication-bypass-via-unverified-signature" class="headerlink" title="一、通过未经验证的签名绕过 JWT 身份验证(JWT authentication bypass via unverified signature)"></a>一、通过未经验证的签名绕过 JWT 身份验证(JWT authentication bypass via unverified signature)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">JWT 库通常提供一种验证令牌的方法和另一种仅对其进行解码的方法。例如，Node.js 库jsonwebtoken有verify()和decode()。</span><br><span class="line">有时，开发人员会混淆这两种方法，只将传入的令牌传递给该decode()方法。这实际上意味着应用程序根本不验证签名。</span><br></pre></td></tr></table></figure>
+
+<p>1、开启实验环境，使用账号登录抓包</p>
+<p><img src="http://img.chiza.top/202311241312748.png" alt="image-20231124131251634"></p>
+<p>2、将访问目录改为&#x2F;admin,然后尝试访问，可以看到服务器返回401 Unauthorized，代表身份验证未通过，并且在JWT的Payload部分有用户名信息</p>
+<p><img src="http://img.chiza.top/202311241313077.png" alt="image-20231124131343994"></p>
+<p>3、将用户名wiener改为administrator,，现在我们就可以成功访问到管理员面板</p>
+<p><img src="http://img.chiza.top/202311241315697.png" alt="image-20231124131522611"></p>
+<p>4、然后使用管理员权限删除对应的用户即可</p>
+<p><img src="http://img.chiza.top/202311241316290.png" alt="image-20231124131640195"></p>
+<h4 id="二、通过有缺陷的签名验证绕过-JWT-身份验证-JWT-authentication-bypass-via-flawed-signature-verification"><a href="#二、通过有缺陷的签名验证绕过-JWT-身份验证-JWT-authentication-bypass-via-flawed-signature-verification" class="headerlink" title="二、通过有缺陷的签名验证绕过 JWT 身份验证(JWT authentication bypass via flawed signature verification)"></a>二、通过有缺陷的签名验证绕过 JWT 身份验证(JWT authentication bypass via flawed signature verification)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JWT 标头包含一个alg参数。这告诉服务器使用哪种算法对令牌进行签名，以及在验证签名时需要使用哪种算法。</span><br><span class="line">&#123;&quot;alg&quot;: &quot;HS256&quot;,&quot;typ&quot;: &quot;JWT&quot;&#125;</span><br><span class="line">JWT 可以使用一系列不同的算法进行签名，但也可以不签名。在这种情况下，该alg参数设置为none，表示所谓的“不安全的 JWT”。</span><br></pre></td></tr></table></figure>
+
+<p>1、开启实验环境，使用账号登录抓包</p>
+<p><img src="http://img.chiza.top/202311241326554.png" alt="image-20231124132639471"></p>
+<p>2、将访问目录改为&#x2F;admin,然后尝试访问，可以看到服务器返回401 Unauthorized，代表身份验证未通过，并且在JWT的Payload部分有用户名信息</p>
+<p><img src="http://img.chiza.top/202311241327634.png" alt="image-20231124132742549"></p>
+<p>3、将头部中的alg改none,将用户名wiener改为administrator,现在我们就可以成功访问到管理员面板（因为设置了签名验证参数alg为none,所以最后的签名就没有意义的，将签名部分删除，记得不要删掉最后的.）</p>
+<p><img src="http://img.chiza.top/202311241332371.png" alt="image-20231124133216295"></p>
+<p>4、然后使用管理员权限删除对应的用户即可</p>
+<p><img src="http://img.chiza.top/202311241333808.png" alt="image-20231124133336734"></p>
+<h4 id="三、通过弱签名密钥绕过-JWT-身份验证-JWT-authentication-bypass-via-weak-signing-key"><a href="#三、通过弱签名密钥绕过-JWT-身份验证-JWT-authentication-bypass-via-weak-signing-key" class="headerlink" title="三、通过弱签名密钥绕过 JWT 身份验证(JWT authentication bypass via weak signing key)"></a>三、通过弱签名密钥绕过 JWT 身份验证(JWT authentication bypass via weak signing key)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">在实现 JWT 应用程序时，如果开发人员使用了弱密钥，这会导致攻击者可以很容易的猜解出对应的密钥，然后使用密钥通过有效签名对令牌进行重新签名。</span><br></pre></td></tr></table></figure>
+
+<p>1、开启实验环境，使用账号登录抓包</p>
+<p><img src="http://img.chiza.top/202311241339321.png" alt="image-20231124133954237"></p>
+<p>2、将访问目录改为&#x2F;admin,然后尝试访问，可以看到服务器返回401 Unauthorized，代表身份验证未通过</p>
+<p><img src="http://img.chiza.top/202311241340626.png" alt="image-20231124134049563"></p>
+<p>3、使用hashcat爆破密钥</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hashcat -a 0 -m 16500  eyJraWQiOiI1M2Y1ZjAxMi03NjI3LTRlNzQtODhlNS0zY2JkY2VmY2E0YWYiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsInN1YiI6IndpZW5lciIsImV4cCI6MTcwMDgwNzk3OX0.EOjDT3rM6jGbdWFNHeS5RyVDg9-vfswjfjiiipeBZ4U secret.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://img.chiza.top/202311241358163.png" alt="image-20231124135852988"></p>
+<p>可以看到爆破出密钥为secret1</p>
+<p>4、利用密钥通过有效签名对令牌进行重新签名</p>
+<p><img src="http://img.chiza.top/202311241402924.png" alt="image-20231124140210844"></p>
+<p>5、成功访问到管理员面板</p>
+<p><img src="http://img.chiza.top/202311241403900.png" alt="image-20231124140320820"></p>
+<p>6、然后使用管理员权限删除对应的用户即可</p>
+<p><img src="http://img.chiza.top/202311241405911.png" alt="image-20231124140537820"></p>
+<h4 id="四、通过-jwk-标头注入绕过-JWT-身份验证-JWT-authentication-bypass-via-jwk-header-injection"><a href="#四、通过-jwk-标头注入绕过-JWT-身份验证-JWT-authentication-bypass-via-jwk-header-injection" class="headerlink" title="四、通过 jwk 标头注入绕过 JWT 身份验证(JWT authentication bypass via jwk header injection)"></a>四、通过 jwk 标头注入绕过 JWT 身份验证(JWT authentication bypass via jwk header injection)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">根据JWS规范，只有alg标头参数是强制的。但实际上，JWT 标头（也称为 JOSE 标头）通常包含其他几个参数。攻击者特别感兴趣的是以下内容。</span><br><span class="line">jwk(JSON Web Key) - 提供表示密钥的嵌入式 JSON 对象。</span><br><span class="line">jku（JSON Web 密钥集 URL）- 提供一个 URL，服务器可以从中获取包含正确密钥的一组密钥。</span><br><span class="line">kid（密钥 ID）- 提供一个 ID，服务器可以使用该 ID 在有多个密钥可供选择的情况下识别正确的密钥。根据密钥的格式，这可能具有匹配的kid参数。</span><br><span class="line"></span><br><span class="line">这些用户可控的参数分别告诉服务器在验证签名时使用哪个密钥。那么如何利用这些来注入，使用自己的任意密钥而不是服务器的密钥签名的修改后的JWT。</span><br></pre></td></tr></table></figure>
+
+<p><strong>通过 jwk 参数注入自签名 JWT</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">JSON Web 签名 (JWS) 规范描述了一个可选的jwk标头参数，服务器可以使用该参数以 JWK 格式将其公钥直接嵌入到令牌本身中。</span><br><span class="line"></span><br><span class="line">JWK（JSON Web 密钥）是一种将密钥表示为 JSON 对象的标准化格式。</span><br><span class="line">您可以在以下 JWT 标头中看到这样的示例：</span><br><span class="line">&#123;</span><br><span class="line">    &quot;kid&quot;: &quot;ed2Nf8sb-sD6ng0-scs5390g-fFD8sfxG&quot;,</span><br><span class="line">    &quot;typ&quot;: &quot;JWT&quot;,</span><br><span class="line">    &quot;alg&quot;: &quot;RS256&quot;,</span><br><span class="line">    &quot;jwk&quot;: &#123;</span><br><span class="line">        &quot;kty&quot;: &quot;RSA&quot;,</span><br><span class="line">        &quot;e&quot;: &quot;AQAB&quot;,</span><br><span class="line">        &quot;kid&quot;: &quot;ed2Nf8sb-sD6ng0-scs5390g-fFD8sfxG&quot;,</span><br><span class="line">        &quot;n&quot;: &quot;yy1wpYmffgXBxhAUJzHHocCuJolwDqql75ZWuCQ_cb33K2vh9m&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">理想情况下，服务器应仅使用有限的公钥白名单来验证JWT签名。但是，配置错误的服务器有时会使用参数中嵌入的任何密钥jwk。</span><br><span class="line">您可以通过使用自己的 RSA 私钥对修改后的JWT进行签名，然后将匹配的公钥嵌入标头来利用此行为jwk。</span><br></pre></td></tr></table></figure>
+
+<p>1、开启实验环境，使用账号登录抓包</p>
+<p><img src="http://img.chiza.top/202311241411603.png" alt="image-20231124141158514"></p>
+<p>2、将访问目录改为&#x2F;admin,然后尝试访问，可以看到服务器返回401 Unauthorized，代表身份验证未通过</p>
+<p><img src="http://img.chiza.top/202311241413841.png" alt="image-20231124141341773"></p>
+<p>3、使用jwk注入，使用JWT Editor插件生成新的 RSA 密钥</p>
+<p><img src="http://img.chiza.top/202311241442429.png" alt="image-20231124144227348"></p>
+<p>4、将用户名修改为administrator,然后注入刚才生成的RSA密钥</p>
+<p><img src="http://img.chiza.top/202311241437153.png" alt="image-20231124143710058"></p>
+<p>5、注入完成后，发送请求，可以看到已经可以成功访问管理员面板了</p>
+<p><img src="http://img.chiza.top/202311241440385.png" alt="image-20231124144044299"></p>
+<p>6、然后使用管理员权限删除对应的用户即可</p>
+<p><img src="http://img.chiza.top/202311241441442.png" alt="image-20231124144150358"></p>
+<h4 id="五、通过-jku-标头注入绕过-JWT-身份验证-JWT-authentication-bypass-via-jku-header-injection"><a href="#五、通过-jku-标头注入绕过-JWT-身份验证-JWT-authentication-bypass-via-jku-header-injection" class="headerlink" title="五、通过 jku 标头注入绕过 JWT 身份验证(JWT authentication bypass via jku header injection)"></a>五、通过 jku 标头注入绕过 JWT 身份验证(JWT authentication bypass via jku header injection)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">jwk某些服务器允许您使用(JWK Set URL) 参数来引用包含密钥的 JWK Set，而不是直接使用标头参数嵌入jku公钥。当验证签名时，服务器从该 URL 中获取相关密钥。</span><br><span class="line"></span><br><span class="line">JWK Set 是一个 JSON 对象，包含表示不同键的 JWK 数组。您可以在下面看到这样的示例。</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    &quot;keys&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;kty&quot;: &quot;RSA&quot;,</span><br><span class="line">            &quot;e&quot;: &quot;AQAB&quot;,</span><br><span class="line">            &quot;kid&quot;: &quot;75d0ef47-af89-47a9-9061-7c02a610d5ab&quot;,</span><br><span class="line">            &quot;n&quot;: &quot;o-yy1wpYmffgXBxhAUJzHHocCuJolwDqql75ZWuCQ_cb33K2vh9mk6GPM9gNN4Y_qTVX67WhsN3JvaFYw-fhvsWQ&quot;</span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;kty&quot;: &quot;RSA&quot;,</span><br><span class="line">            &quot;e&quot;: &quot;AQAB&quot;,</span><br><span class="line">            &quot;kid&quot;: &quot;d8fDFo-fS9-faS14a9-ASf99sa-7c1Ad5abA&quot;,</span><br><span class="line">            &quot;n&quot;: &quot;fc3f-yy1wpYmffgXBxhAUJzHql79gNNQ_cb33HocCuJolwDqmk6GPM4Y_qTVX67WhsN3JvaFYw-dfg6DH-asAScw&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br><span class="line">像这样的 JWK 集有时会通过标准端点公开公开，例如/.well-known/jwks.json.</span><br><span class="line">更安全的网站只会从受信任的域获取密钥，但有时您可以利用 URL 解析差异来绕过这种过滤</span><br></pre></td></tr></table></figure>
+
+<p>1、开启实验环境，使用账号登录抓包</p>
+<p><img src="http://img.chiza.top/202311241506922.png" alt="image-20231124150609833"></p>
+<p>2、将访问目录改为&#x2F;admin,然后尝试访问，可以看到服务器返回401 Unauthorized，代表身份验证未通过</p>
+<p><img src="http://img.chiza.top/202311241507641.png" alt="image-20231124150705574"></p>
+<p>3、通过jku注入，使用JWT Editor插件生成新的 RSA 密钥</p>
+<p><img src="http://img.chiza.top/202311241508816.png" alt="image-20231124150813735"></p>
+<p>4、进入服务器，将Body改为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;keys&quot;: [</span><br><span class="line"></span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://img.chiza.top/202311241509445.png" alt="image-20231124150948405"></p>
+<p>5、将生成的RSA密钥内容复制到Body中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;keys&quot;: [</span><br><span class="line">    &#123;</span><br><span class="line">    &quot;kty&quot;: &quot;RSA&quot;,</span><br><span class="line">    &quot;e&quot;: &quot;AQAB&quot;,</span><br><span class="line">    &quot;kid&quot;: &quot;61d4d9d5-be2b-4416-bc79-fc20a0adf238&quot;,</span><br><span class="line">    &quot;n&quot;: &quot;0BQgIUMaTJSEt1zKAfur-yY5KjK2guvHrTb1BMeFdNvlP8icq7JPbCVElVYQ1cj4WSatExWEaXsdRlRsxdMmS9V9UgF1ziVxn3QU6zx6cDMGek0X4QxK9HmyUXjnroGpj1KpzsWrwDmN-EvfS8F-vPBRuJlbJqlfvEOtWGn1XnCSPfrRrN7CCndgTQ_IxoelWhhsEj7MWfLZtiqez5lV829wawRB7Cdd2jy95QjwitxysiOGLvre6CFh-ctmSjGehMMTKd7au9y2g96T-_DRIhCH0hHBRDCxa5LbAN8UkxRuBuTI4IM87aZofmK8zbsllryIit9C1dOHB4n_t1Wz-w&quot;</span><br><span class="line">&#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://img.chiza.top/202311241511373.png" alt="image-20231124151153279"></p>
+<p>6、将JWT的头部修改为如下（当验证签名时，服务器从会直接从jku指定的URL中获取相关密钥）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;kid&quot;: &quot;61d4d9d5-be2b-4416-bc79-fc20a0adf238&quot;,</span><br><span class="line">    &quot;alg&quot;: &quot;RS256&quot;,</span><br><span class="line">    &quot;jku&quot;: &quot;https://exploit-0a50009503b9adf080d4843e019f00ee.exploit-server.net/exploit&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://img.chiza.top/202311241521041.png" alt="image-20231124152103966"></p>
+<p>7、然后选择刚才生成的RSA密钥对JWT进行重新签名</p>
+<p><img src="http://img.chiza.top/202311241516727.png" alt="image-20231124151611645"></p>
+<p>8、重新签名之后，发送请求，就可以成功访问管理员面板了</p>
+<p><img src="http://img.chiza.top/202311241528237.png" alt="image-20231124152847144"></p>
+<p>9、然后使用管理员权限删除指定账户即可</p>
+<p><img src="http://img.chiza.top/202311241529814.png" alt="image-20231124152950727"></p>
+<h4 id="六、通过-Kid-标头路径遍历绕过-JWT-身份验证-JWT-authentication-bypass-via-kid-header-path-traversal"><a href="#六、通过-Kid-标头路径遍历绕过-JWT-身份验证-JWT-authentication-bypass-via-kid-header-path-traversal" class="headerlink" title="六、通过 Kid 标头路径遍历绕过 JWT 身份验证(JWT authentication bypass via kid header path traversal)"></a>六、通过 Kid 标头路径遍历绕过 JWT 身份验证(JWT authentication bypass via kid header path traversal)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">通过kid参数注入自签名JWT</span><br><span class="line">服务器可能使用多个加密密钥来签署不同类型的数据，而不仅仅是 JWT。因此，JWT 的 header 中可能会包含一个kid（Key ID）参数，该参数可以帮助服务器识别在验证签名时使用哪个密钥。</span><br><span class="line"></span><br><span class="line">验证密钥通常存储为 JWK 集。在这种情况下，服务器可以简单地查找与kid令牌相同的JWK。然而，JWS 规范并未定义此 ID 的具体结构 - 它只是开发人员选择的任意字符串。例如，他们可能使用kid参数来指向数据库中的特定条目，甚至是文件名。</span><br><span class="line">如果此参数也容易受到目录遍历的攻击，则攻击者可能会强制服务器使用其文件系统中的任意文件作为验证密钥。</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    &quot;kid&quot;: &quot;../../path/to/file&quot;,</span><br><span class="line">    &quot;typ&quot;: &quot;JWT&quot;,</span><br><span class="line">    &quot;alg&quot;: &quot;HS256&quot;,</span><br><span class="line">    &quot;k&quot;: &quot;asGsADas3421-dfh9DGN-AFDFDbasfd8-anfjkvc&quot;</span><br><span class="line">&#125;</span><br><span class="line">如果服务器还支持使用对称法签名的 JWT，则这尤其危险。在这种情况下，攻击者可能会将kid参数指向可预测的静态文件，然后使用与该文件内容匹配的密钥对 JWT 进行签名。</span><br><span class="line"></span><br><span class="line">理论上，您可以对任何文件执行此操作，但最简单的方法之一是使用/dev/null，它存在于大多数 Linux 系统上。由于这是一个空文件，读取它会返回一个空字符串。因此，使用空字符串对令牌进行签名将得到有效的签名。</span><br></pre></td></tr></table></figure>
+
+<p>1、开启实验环境，使用账号登录抓包</p>
+<p><img src="http://img.chiza.top/202311241631079.png" alt="image-20231124163103958"></p>
+<p>2、将访问目录改为&#x2F;admin,然后尝试访问，可以看到服务器返回401 Unauthorized，代表身份验证未通过</p>
+<p><img src="http://img.chiza.top/202311241631830.png" alt="image-20231124163133760"></p>
+<p>3、生成对称密钥</p>
+<p><img src="http://img.chiza.top/202311241632956.png" alt="image-20231124163256880"></p>
+<p>4、将生成的属性值替换<code>k</code>为 Base64 编码的空字节 ( <code>AA==</code>)。(这只是一种解决方法，因为 JWT  Editor插件不允许使用空字符串签署令牌）</p>
+<p><img src="http://img.chiza.top/202311241634024.png" alt="image-20231124163436977"></p>
+<p>5、在 JWT 的 头部，将<code>kid</code>参数的值更改为指向文件的<code>/dev/null</code>序列：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">../../../dev/null</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://img.chiza.top/202311241636891.png" alt="image-20231124163626800"></p>
+<p>6、然后使用生成的对称密钥对JWT重新签名</p>
+<p><img src="http://img.chiza.top/202311241638235.png" alt="image-20231124163825139"></p>
+<p>7、重新签名之后发送请求，就可以成功访问管理员面板了</p>
+<p><img src="http://img.chiza.top/202311241639202.png" alt="image-20231124163931101"></p>
+<p>8、然后使用管理员权限删除指定的用户即可</p>
+<p><img src="http://img.chiza.top/202311241640900.png" alt="image-20231124164030822"></p>
+<h3 id="如何防御JWT攻击"><a href="#如何防御JWT攻击" class="headerlink" title="如何防御JWT攻击"></a>如何防御JWT攻击</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">来自BurpSuite的建议：</span><br><span class="line">1、使用最新的库来处理JWT，并确保开发人员对相关安全问题足够了解。现代代码库的使用降低了在代码实现中引入安全漏洞的可能性，但由于相关规范固有的灵活性，也并非万无一失。</span><br><span class="line">2、确保对收到的任何JWT进行严格的签名验证，并考虑边缘情况，如使用非预期的算法签名的JWT。</span><br><span class="line">3、为jku头部提供允许主机白名单，并严格执行。</span><br><span class="line">4、确保不会受到kid头部参数路径穿越或SQL注入的影响。</span><br><span class="line">5、为发行的任何令牌设置到期日期</span><br><span class="line">6、尽可能避免在 URL 参数中发送令牌</span><br><span class="line">7、使发行服务器能够撤销令牌（例如，在注销时）</span><br></pre></td></tr></table></figure>
+
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="http://www.chiza.top">Cobra</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://www.chiza.top/2023/11/30/page-14/">http://www.chiza.top/2023/11/30/page-14/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://www.chiza.top" target="_blank">Cobra's blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="http://img.chiza.top/image-20230226152938341.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2023/02/26/cors%E6%BC%8F%E6%B4%9E%E6%B5%85%E6%9E%90/"><img class="next-cover" src="http://img.chiza.top/image-20230226152938341.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">CORS漏洞浅析</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="http://img.chiza.top/toux.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Cobra</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFJWT"><span class="toc-number">1.</span> <span class="toc-text">什么是JWT</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JWT-%E6%A0%BC%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">JWT 格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JWT%E6%94%BB%E5%87%BB"><span class="toc-number">3.</span> <span class="toc-text">JWT攻击</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%9A%E8%BF%87Burp-Suite%E9%9D%B6%E5%9C%BA%E5%AD%A6%E4%B9%A0JWT%E6%94%BB%E5%87%BB"><span class="toc-number">4.</span> <span class="toc-text">通过Burp Suite靶场学习JWT攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%80%9A%E8%BF%87%E6%9C%AA%E7%BB%8F%E9%AA%8C%E8%AF%81%E7%9A%84%E7%AD%BE%E5%90%8D%E7%BB%95%E8%BF%87-JWT-%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81-JWT-authentication-bypass-via-unverified-signature"><span class="toc-number">4.1.</span> <span class="toc-text">一、通过未经验证的签名绕过 JWT 身份验证(JWT authentication bypass via unverified signature)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E9%80%9A%E8%BF%87%E6%9C%89%E7%BC%BA%E9%99%B7%E7%9A%84%E7%AD%BE%E5%90%8D%E9%AA%8C%E8%AF%81%E7%BB%95%E8%BF%87-JWT-%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81-JWT-authentication-bypass-via-flawed-signature-verification"><span class="toc-number">4.2.</span> <span class="toc-text">二、通过有缺陷的签名验证绕过 JWT 身份验证(JWT authentication bypass via flawed signature verification)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%80%9A%E8%BF%87%E5%BC%B1%E7%AD%BE%E5%90%8D%E5%AF%86%E9%92%A5%E7%BB%95%E8%BF%87-JWT-%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81-JWT-authentication-bypass-via-weak-signing-key"><span class="toc-number">4.3.</span> <span class="toc-text">三、通过弱签名密钥绕过 JWT 身份验证(JWT authentication bypass via weak signing key)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%80%9A%E8%BF%87-jwk-%E6%A0%87%E5%A4%B4%E6%B3%A8%E5%85%A5%E7%BB%95%E8%BF%87-JWT-%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81-JWT-authentication-bypass-via-jwk-header-injection"><span class="toc-number">4.4.</span> <span class="toc-text">四、通过 jwk 标头注入绕过 JWT 身份验证(JWT authentication bypass via jwk header injection)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E9%80%9A%E8%BF%87-jku-%E6%A0%87%E5%A4%B4%E6%B3%A8%E5%85%A5%E7%BB%95%E8%BF%87-JWT-%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81-JWT-authentication-bypass-via-jku-header-injection"><span class="toc-number">4.5.</span> <span class="toc-text">五、通过 jku 标头注入绕过 JWT 身份验证(JWT authentication bypass via jku header injection)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%80%9A%E8%BF%87-Kid-%E6%A0%87%E5%A4%B4%E8%B7%AF%E5%BE%84%E9%81%8D%E5%8E%86%E7%BB%95%E8%BF%87-JWT-%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81-JWT-authentication-bypass-via-kid-header-path-traversal"><span class="toc-number">4.6.</span> <span class="toc-text">六、通过 Kid 标头路径遍历绕过 JWT 身份验证(JWT authentication bypass via kid header path traversal)</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E9%98%B2%E5%BE%A1JWT%E6%94%BB%E5%87%BB"><span class="toc-number">5.</span> <span class="toc-text">如何防御JWT攻击</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2023/11/30/page-14/" title="初识JWT攻击"><img src="http://img.chiza.top/image-20230226152938341.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="初识JWT攻击"/></a><div class="content"><a class="title" href="/2023/11/30/page-14/" title="初识JWT攻击">初识JWT攻击</a><time datetime="2023-11-30T06:15:42.000Z" title="发表于 2023-11-30 14:15:42">2023-11-30</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2023/02/26/cors%E6%BC%8F%E6%B4%9E%E6%B5%85%E6%9E%90/" title="CORS漏洞浅析"><img src="http://img.chiza.top/image-20230226152938341.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CORS漏洞浅析"/></a><div class="content"><a class="title" href="/2023/02/26/cors%E6%BC%8F%E6%B4%9E%E6%B5%85%E6%9E%90/" title="CORS漏洞浅析">CORS漏洞浅析</a><time datetime="2023-02-26T06:54:42.000Z" title="发表于 2023-02-26 14:54:42">2023-02-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/10/12/Redteam2%E9%9D%B6%E5%9C%BA%EF%BC%88%E4%BB%8E%E5%A4%96%E7%BD%91%20log4j2%20RCE%20%E5%86%8D%E5%88%B0%E5%86%85%E7%BD%91%E6%8B%BF%E4%B8%8B%E5%9F%9F%E6%8E%A7%20%EF%BC%89/" title="Redteam2靶场（从外网 log4j2 RCE 再到内网拿下域控 ）"><img src="http://img.chiza.top/image-20221012182105986.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Redteam2靶场（从外网 log4j2 RCE 再到内网拿下域控 ）"/></a><div class="content"><a class="title" href="/2022/10/12/Redteam2%E9%9D%B6%E5%9C%BA%EF%BC%88%E4%BB%8E%E5%A4%96%E7%BD%91%20log4j2%20RCE%20%E5%86%8D%E5%88%B0%E5%86%85%E7%BD%91%E6%8B%BF%E4%B8%8B%E5%9F%9F%E6%8E%A7%20%EF%BC%89/" title="Redteam2靶场（从外网 log4j2 RCE 再到内网拿下域控 ）">Redteam2靶场（从外网 log4j2 RCE 再到内网拿下域控 ）</a><time datetime="2022-10-12T10:28:10.000Z" title="发表于 2022-10-12 18:28:10">2022-10-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/10/10/%E5%88%A9%E7%94%A8phpmyadmin%E8%BF%9B%E8%A1%8Cgetshell/" title="利用phpmyadmin进行getshell"><img src="http://img.chiza.top/image-20220115103835559.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="利用phpmyadmin进行getshell"/></a><div class="content"><a class="title" href="/2022/10/10/%E5%88%A9%E7%94%A8phpmyadmin%E8%BF%9B%E8%A1%8Cgetshell/" title="利用phpmyadmin进行getshell">利用phpmyadmin进行getshell</a><time datetime="2022-10-10T00:38:56.000Z" title="发表于 2022-10-10 08:38:56">2022-10-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/10/07/%E5%86%85%E7%BD%91%E6%AD%BB%E8%A7%92/" title="内网死角"><img src="http://img.chiza.top/image-20220912150613150.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="内网死角"/></a><div class="content"><a class="title" href="/2022/10/07/%E5%86%85%E7%BD%91%E6%AD%BB%E8%A7%92/" title="内网死角">内网死角</a><time datetime="2022-10-07T15:26:14.000Z" title="发表于 2022-10-07 23:26:14">2022-10-07</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('http://img.chiza.top/image-20230226152938341.png')"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2023 By Cobra</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><img src="https://haiyong.site/img/icp.png"><a href="https://beian.miit.gov.cn/#/Integrated/index"  style="color:white" target="_blank">桂ICP备2022005782号-1</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><div class="js-pjax"></div><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-heart.min.js" async="async" mobile="true"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
